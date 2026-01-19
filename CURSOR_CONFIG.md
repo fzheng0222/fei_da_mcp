@@ -1,103 +1,61 @@
-# 🎯 CURSOR MCP CONFIGURATION
+# Cursor MCP Configuration
 
-## Copy & Paste This Into Your Cursor Settings!
+## Quick Setup
 
----
+### 1. Add to Cursor MCP Settings
 
-## 📋 **Step 1: Open Cursor MCP Settings**
-
-1. In Cursor, press **`Cmd + ,`** (Mac) or **`Ctrl + ,`** (Windows/Linux)
-2. In the search bar, type: **`mcp`**
-3. Click on **"MCP Servers"** or look for **"Edit in settings.json"**
-4. This opens your MCP configuration file
-
----
-
-## 📝 **Step 2: Paste This Configuration**
-
-Copy and paste this ENTIRE block into your Cursor MCP settings:
+Press `Cmd + ,` → Search "mcp" → Edit settings.json:
 
 ```json
 {
   "mcpServers": {
     "da-mcp": {
       "command": "/Users/fei.zheng/Documents/Github/da-mcp/.venv/bin/python",
-      "args": [
-        "/Users/fei.zheng/Documents/Github/da-mcp/main.py"
-      ],
-      "env": {
-        "DA_DATA_DIR": "/Users/fei.zheng/Documents/Github/da-mcp"
-      }
+      "args": ["/Users/fei.zheng/Documents/Github/da-mcp/main.py"]
     }
   }
 }
 ```
 
----
+### 2. Restart Cursor
 
-## 🔍 **What This Means:**
+`Cmd + Q` then reopen.
 
-- **`da-mcp`** - The name of your MCP server (you can change this)
-- **`command`** - Path to Python in your virtual environment
-- **`args`** - Path to your main.py file
-- **`env.DA_DATA_DIR`** - Where your CSV files are located
+### 3. Test
 
----
-
-## 🔄 **Step 3: Restart Cursor**
-
-**IMPORTANT:** You MUST completely restart Cursor!
-
-- **Mac:** Press `Cmd + Q`, then reopen Cursor
-- **Windows/Linux:** Close Cursor completely, then reopen
+Ask: "List tables in prod-im-data.mod_imx"
 
 ---
 
-## ✅ **Step 4: Verify It Works**
+## Prerequisites
 
-After restarting, try these in Cursor's chat:
-
-1. **"What tables are available?"**
-   - Should show "sales_data" table
-
-2. **"Show me the schema of sales_data"**
-   - Should show columns: date, region, sales, benchmark, etc.
-
-3. **"Query the sales_data table"**
-   - Should return the actual data!
+- Python 3.10+
+- gcloud authenticated: `gcloud auth application-default login`
+- Virtual env: `.venv/bin/python`
 
 ---
 
-## 🎉 **You're Done!**
+## Available Tools
 
-If you see your data, congratulations! Your DA-MCP server is working! 🚀
-
----
-
-## 🐛 **Troubleshooting**
-
-### Problem: "MCP server not found"
-- ✅ Check the file paths are correct
-- ✅ Make sure you completely restarted Cursor
-- ✅ Check `.venv` folder exists
-
-### Problem: "Command failed"
-- ✅ Run this to test: `.venv/bin/python main.py`
-- ✅ Check for errors in terminal
-
-### Problem: "No tables found"
-- ✅ Make sure `sales_data.csv` exists in the folder
-- ✅ Check the DA_DATA_DIR path is correct
+| Tool | Purpose |
+|------|---------|
+| `list_tables` | List tables in a BQ dataset |
+| `describe_table` | Get table schema |
+| `sample_table` | Preview rows |
+| `query_bigquery` | Run SQL queries |
 
 ---
 
-## 💡 **Next Steps**
+## Troubleshooting
 
-Once it's working, try these queries:
+**"MCP server not found"**
+- Check paths in config
+- Restart Cursor completely
 
-- "Show me sales by region"
-- "Which regions exceed their benchmark?"
-- "Compare sales to benchmark for each region"
-- "What's the average sales by region?"
+**"Auth failed"**
+- Run: `gcloud auth application-default login`
+- Restart MCP server
 
-Have fun! 🎊
+**"Table not found"**
+- Check dataset/table name spelling
+- Use `list_tables` to discover tables
