@@ -11,10 +11,13 @@ Predict weekly MRR and identify which levers drive it.
 ## Pipeline
 
 ```
+                            🤖 AI-ASSISTED PIPELINE
 ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-│ 1. GET   │ → │ 2. CLEAN │ → │ 3. FEAT  │ → │ 4. MODEL │ → │ 5. EVAL  │ → │ 6. OUTPUT│
-│   DATA   │   │   DATA   │   │   SELECT │   │ FORECAST │   │ PERFORM  │   │   SEND   │
+│ 1. GET   │ → │ 2. CLEAN │ → │ 3. FEAT  │ → │ 4. MODEL │ → │ 5. EVAL  │ → │ 6. SCQA  │
+│   DATA   │   │   DATA   │   │   SELECT │   │ FORECAST │   │ PERFORM  │   │  REPORT  │
 └──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
+                                                                          Consultant-style
+                                                                             output
 ```
 
 ---
@@ -152,14 +155,13 @@ for i in range(4):
 
 ### Feature Importance Results
 
-| Rank | Feature | Lever | Importance |
-|------|---------|-------|------------|
-| 1 | `win_rate_pct` | Deal Close | **74%** |
-| 2 | `at_risk_pct` | At Risk | **14%** |
-| 3 | `mrr_lag1` | Trend | **12%** |
-| 4 | `pipeline_growth` | Pipeline Growth | 0% |
+| Lever | Features | Importance | Interpretation |
+|-------|----------|------------|----------------|
+| **Deal Close** | new_wins, velocity, win_rate | **74%** | Closing drives MRR |
+| **At Risk** | at_risk_change, at_risk_pct | **14%** | Retention secondary |
+| **Pipeline** | pipeline_growth, growth_pct | **12%** | Prospecting barely matters |
 
-**Key Insight:** Pipeline is growing but win rate is dropping → MRR declining despite more opportunities.
+**Key Insight:** 74% Deal Close means we have enough pipeline — the problem is conversion, not prospecting. Focus on closing and saving, not adding more top-of-funnel.
 
 ### Model Limitations
 
@@ -170,7 +172,7 @@ for i in range(4):
 
 ---
 
-## Step 6: Output & Send
+## Step 6: SCQA Report (Consultant-Style Output)
 
 ### Save to BQ
 
@@ -179,17 +181,22 @@ for i in range(4):
 | `t_forecast_feature_importance` | XGBoost weights by feature |
 | `t_forecast_predictions` | 4-week forecast |
 
-### Generate Report
+### Generate Report (SCQA Structure)
 
 ```
-📊 WEEKLY MRR REPORT
-====================
-1. CURRENT PERFORMANCE  → Latest MRR, WoW change
-2. FORECAST (4 weeks)   → Trend projection
-3. DRIVERS              → Top 3 features by importance
-4. FOCUS AREAS          → Actionable priorities
-5. TOP DEALS            → Specific deals to WIN/SAVE
+📊 WEEKLY MRR FORECAST REPORT
+=============================
+1. SITUATION     → MRR, target progress, confidence + trajectory graph
+2. COMPLICATION  → What's blocking us (connects situation to analysis)
+3. ANALYSIS      → Feature importance (what levers drive MRR)
+4. ACTIONS       → Urgent (close/save), Nurture, Metric to fix
 ```
+
+**Report Flow:**
+- SITUATION: Where we are (MRR + trajectory visual)
+- COMPLICATION: The problem in one sentence
+- ANALYSIS: Feature importance explains WHY (74% Deal Close = focus on closing, not prospecting)
+- ACTIONS: Prioritized by urgency (closeable vs at-risk vs nurture)
 
 ---
 
@@ -227,12 +234,12 @@ python -m domains._1_forecast_mmr.run
 ## TODO
 
 **Model Improvements:**
-- [ ] Add confidence intervals (bootstrap)
-- [ ] A/B test trend vs XGBoost forecast
 - [ ] Add seasonality (month-end spikes)
+- [ ] Add competitor score
 
 **Output & Delivery:**
 - [ ] Beautify insights (charts, 1-pagers, visual summaries)
 - [ ] Slack integration (weekly auto-post)
-- [ ] Cron automation
-- [ ] Alert thresholds (MRR drops >5%)
+
+**New:**
+- [ ] Identify deals that are likely to be closed as NBA

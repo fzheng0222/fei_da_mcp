@@ -15,7 +15,6 @@ python main.py
 Then in Cursor, just ask:
 - `"bq analysis"` → General BigQuery exploration
 - `"forecast mmr"` → Weekly MRR report
-- `"onboarding flow"` → User funnel analysis
 
 ---
 
@@ -25,31 +24,18 @@ MCP servers have 3 components: **Tools** (actions), **Resources** (read-only dat
 
 **0. General Analysis** - Daily data exploration
 
-| Type | Name | What it does |
-|------|------|--------------|
-| Tool | `list_tables` | List tables in a dataset |
-| Tool | `describe_table` | Get table schema |
-| Tool | `sample_table` | Quick row preview |
-| Tool | `query_bigquery` | Run SQL query |
-| Tool | `profile_table` | Data quality check |
-| Resource | `schema://bigquery` | Available BQ tables |
-| Prompt | `explore`, `profile`, `quick_stats` | Analysis templates |
+| Tool | What it does |
+|------|--------------|
+| `list_tables` | List tables in a dataset |
+| `describe_table` | Get table schema |
+| `sample_table` | Quick row preview |
+| `query_bigquery` | Run SQL query |
 
 **1. Forecast MMR** - Weekly MRR predictions
 
-| Type | Name | What it does |
-|------|------|--------------|
-| Tool | `forecast_mmr` | Generate weekly report |
-| Tool | `forecast_trend` | Simple trend forecast |
-| Resource | `forecast://latest` | 4-week predictions |
-| Resource | `forecast://feature_importance` | XGBoost weights |
-| Prompt | `forecast_drivers`, `forecast_actions` | Analysis templates |
-
-**2. Onboarding Flow** - User funnel analysis
-
-| Type | Name | What it does |
-|------|------|--------------|
-| - | Query template | See `README(DEV-FACING).md` |
+| Tool | What it does |
+|------|--------------|
+| `forecast_mmr` | Generate weekly report |
 
 ---
 
@@ -59,10 +45,6 @@ MCP servers have 3 components: **Tools** (actions), **Resources** (read-only dat
 |---|--------|--------|
 | 0 | general_analysis | Ready |
 | 1 | forecast_mmr | Ready |
-| 2 | onboarding_flow | Ready |
-| 3 | farming_insight | Placeholder |
-| 4 | user_segmentation | Placeholder |
-| 5 | sybil | Placeholder |
 
 ---
 
@@ -72,11 +54,9 @@ MCP servers have 3 components: **Tools** (actions), **Resources** (read-only dat
 da-mcp/
 ├── main.py           # MCP server
 ├── core/             # BigQuery client
-└── domains/          # Each domain has: tools.py, resources.py, prompts.py
+└── domains/
     ├── _0_general_analysis/
-    ├── _1_forecast_mmr/
-    ├── _2_onboarding_flow_analysis/
-    └── ...
+    └── _1_forecast_mmr/
 ```
 
 ---
@@ -84,7 +64,7 @@ da-mcp/
 ## How to Add a Domain
 
 1. Create folder: `domains/_X_name/`
-2. Add files: `tools.py`, `resources.py`, `prompts.py`, `README(USER-FACING).md`, `README(DEV-FACING).md`
+2. Add files: `tools.py`, `resources.py`, `prompts.py`, `README.md`
 3. Register in `main.py`
 
 See `_1_forecast_mmr` for a complete example.

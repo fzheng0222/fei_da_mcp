@@ -1,7 +1,5 @@
 """
 Forecast MMR Domain - MCP Tools
-================================
-Actions AI can execute for MRR forecasting.
 """
 
 import json
@@ -9,6 +7,7 @@ import pandas as pd
 from typing import Any, List
 from mcp.types import Tool, TextContent
 from core.bq_client import get_client
+from .prompts import get_prompt_content, TARGET_MRR
 
 
 def get_tools():
@@ -16,28 +15,10 @@ def get_tools():
     return [
         Tool(
             name="forecast_mmr",
-            description=(
-                "Generate the weekly MRR forecast report. "
-                "Auto-executes: queries BQ, runs forecast, returns formatted report."
-            ),
+            description="Generate the weekly MRR forecast report.",
             inputSchema={
                 "type": "object",
                 "properties": {},
-                "required": []
-            }
-        ),
-        Tool(
-            name="forecast_trend",
-            description="Simple trend-based forecast using recent average change.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "weeks": {
-                        "type": "number",
-                        "description": "Number of weeks to forecast (default: 4)",
-                        "default": 4
-                    }
-                },
                 "required": []
             }
         )
@@ -46,25 +27,21 @@ def get_tools():
 
 async def call_tool(name: str, arguments: Any) -> List[TextContent]:
     """Handle forecast tool calls."""
-    
     if name == "forecast_mmr":
         return await _forecast_mmr_report(arguments)
-    elif name == "forecast_trend":
-        return await _forecast_trend(arguments)
     else:
-        raise ValueError(f"Unknown forecast tool: {name}")
+        raise ValueError(f"Unknown tool: {name}")
 
 
 async def _forecast_mmr_report(arguments: Any) -> List[TextContent]:
-    """Generate the full weekly MRR forecast report."""
+    """Generate the weekly MRR forecast report with SCQA-structured prompt."""
     try:
         client = get_client()
         PROJECT = "dev-im-platform"
         DATASET = "temp_fei_ai"
         
         # 1. Get current performance data
-        model_sql = f"SELECT * FROM `{PROJECT}.{DATASET}.v_model_3_levers` ORDER BY week"
-        df = client.query(model_sql).to_dataframe()
+        df = client.query(f"SELECT * FROM `{PROJECT}.{DATASET}.v_model_3_levers` ORDER BY week").to_dataframe()
         df = df.sort_values('week').reset_index(drop=True)
         
         latest = df.iloc[-1]
@@ -75,130 +52,94 @@ async def _forecast_mmr_report(arguments: Any) -> List[TextContent]:
         wow_pct = (wow_change / float(prev['total_mrr']) * 100) if prev['total_mrr'] else 0
         win_rate = float(latest.get('win_rate_pct', 0))
         at_risk_pct = float(latest.get('at_risk_pct', 0))
-        pipeline_growth_pct = float(latest.get('pipeline_growth_pct', 0))
+        at_risk_deals = int(latest.get('at_risk_deals', 0))
         
         # 2. Run forecast
-        numeric_cols = df.select_dtypes(include=['float64', 'int64', 'Int64']).columns
-        df[numeric_cols] = df[numeric_cols].fillna(0)
-        recent_changes = df['mrr_change'].tail(4)
-        avg_change = float(recent_changes.mean())
+        df[df.select_dtypes(include=['float64', 'int64', 'Int64']).columns] = df.select_dtypes(include=['float64', 'int64', 'Int64']).fillna(0)
+        avg_change = float(df['mrr_change'].tail(4).mean())
         
-        last_week = df['week'].iloc[-1]
         predictions = []
         forecast_mrr = current_mrr
-        
         for i in range(4):
             forecast_mrr = forecast_mrr + avg_change
-            week_date = last_week + pd.Timedelta(weeks=i+1)
             predictions.append({"week": i + 1, "mrr": round(forecast_mrr / 1000, 0)})
         
         # 3. Get feature importance
         try:
-            imp_sql = f"SELECT * FROM `{PROJECT}.{DATASET}.t_forecast_feature_importance` ORDER BY rank LIMIT 3"
-            imp_df = client.query(imp_sql).to_dataframe()
+            imp_df = client.query(f"SELECT * FROM `{PROJECT}.{DATASET}.t_forecast_feature_importance` ORDER BY rank LIMIT 10").to_dataframe()
             top_features = imp_df.to_dict(orient='records')
         except:
             top_features = [{"lever": "Deal Close", "importance_pct": 74}]
         
         # 4. Get top deals
         try:
-            deals_sql = f"SELECT * FROM `{PROJECT}.{DATASET}.v_next_best_action` ORDER BY priority ASC"
-            deals_df = client.query(deals_sql).to_dataframe()
-            
-            if 'action_type' in deals_df.columns:
-                deals_to_win = deals_df[deals_df['action_type'] == 'WIN'].head(3).to_dict(orient='records')
-                deals_to_save = deals_df[deals_df['action_type'] == 'SAVE'].head(3).to_dict(orient='records')
-                win_total = deals_df[deals_df['action_type'] == 'WIN']['mrr'].sum()
-                save_total = deals_df[deals_df['action_type'] == 'SAVE']['mrr'].sum()
-            else:
-                deals_to_win, deals_to_save = [], []
-                win_total, save_total = 0, 0
+            deals_df = client.query(f"SELECT * FROM `{PROJECT}.{DATASET}.v_next_best_action` ORDER BY priority ASC").to_dataframe()
+            deals_to_win = deals_df[deals_df['action_type'] == 'WIN'].to_dict(orient='records')
+            deals_to_save = deals_df[deals_df['action_type'] == 'SAVE'].to_dict(orient='records')
         except:
             deals_to_win, deals_to_save = [], []
-            win_total, save_total = 0, 0
         
-        # 5. Format report
-        at_risk_deals = int(latest.get('at_risk_deals', 0))
-        pipeline_velocity = float(latest.get('pipeline_velocity', 0))
+        # 5. Get historical data for trajectory (15 weeks)
+        history = df[['week', 'total_mrr', 'mrr_change', 'win_rate_pct', 'at_risk_pct']].tail(15).to_dict(orient='records')
         
-        report = f"""
-📊 WEEKLY MRR REPORT
-====================
+        # 6. Build data section
+        data_section = f"""
+================================================================================
+DATA (use this to generate the report)
+================================================================================
 
-1. CURRENT PERFORMANCE
-   MRR: ${current_mrr/1000:.0f}K | WoW: ${wow_change/1000:+.1f}K ({wow_pct:+.1f}%)
-   Win Rate: {win_rate:.0f}% | At-Risk: {at_risk_pct:.0f}% | Pipeline: {pipeline_growth_pct:+.0f}%
+TARGET: ${TARGET_MRR:,} end-of-cycle MRR
 
-2. FORECAST
-   Week 1: ${predictions[0]['mrr']:.0f}K  Week 2: ${predictions[1]['mrr']:.0f}K  Week 3: ${predictions[2]['mrr']:.0f}K  Week 4: ${predictions[3]['mrr']:.0f}K
-   Trend: ${avg_change/1000:+.1f}K/week
+CURRENT PERFORMANCE (latest week):
+- Current MRR: ${current_mrr:,.0f}
+- Week-over-Week Change: ${wow_change:+,.0f} ({wow_pct:+.1f}%)
+- Win Rate: {win_rate:.0f}%
+- At-Risk: {at_risk_pct:.0f}% ({at_risk_deals} deals)
 
-3. DRIVERS"""
+4-WEEK FORECAST (trend: ${avg_change:+,.0f}/week):
+"""
+        for p in predictions:
+            data_section += f"- Week {p['week']}: ${p['mrr']:.0f}K\n"
         
-        for feat in top_features[:3]:
-            report += f"\n   {feat.get('importance_pct', 0):.0f}% {feat.get('lever', 'Unknown')}"
+        data_section += f"""
+FEATURE IMPORTANCE (from XGBoost model):
+"""
+        for feat in top_features:
+            data_section += f"- {feat.get('lever', 'Unknown')}: {feat.get('feature', '')} = {feat.get('importance_pct', 0):.1f}%\n"
         
-        report += f"""
+        data_section += f"""
+HISTORICAL TRAJECTORY (last 15 weeks):
+"""
+        for h in history:
+            week_str = str(h['week'])[:10] if h['week'] else 'N/A'
+            data_section += f"- {week_str}: ${h['total_mrr']:,.0f} (change: ${h.get('mrr_change', 0):+,.0f})\n"
+        
+        data_section += f"""
+DEALS TO WIN ({len(deals_to_win)} deals):
+"""
+        for deal in deals_to_win:
+            data_section += f"- {deal.get('company_name', 'Unknown')}: ${deal.get('mrr', 0):,.0f} | velocity: {deal.get('deal_velocity_days', 'N/A')} days | region: {deal.get('b2b_region', 'N/A')}\n"
+        
+        data_section += f"""
+DEALS TO SAVE ({len(deals_to_save)} deals):
+"""
+        for deal in deals_to_save:
+            data_section += f"- {deal.get('company_name', 'Unknown')}: ${deal.get('mrr', 0):,.0f} | velocity: {deal.get('deal_velocity_days', 'N/A')} days | region: {deal.get('b2b_region', 'N/A')}\n"
+        
+        # 7. Get the SCQA prompt and combine
+        prompt_content = get_prompt_content("forecast_mmr")
+        
+        full_response = f"""
+{prompt_content}
 
-4. FOCUS AREAS
-   #1 Fix Win Rate ({win_rate:.0f}% → 13%) → +${win_total/1000:.0f}K potential
-   #2 Save At-Risk Deals ({at_risk_deals} deals) → ${save_total/1000:.0f}K at stake
-   #3 Speed Up Velocity ({pipeline_velocity:.0f} → 158 days) → faster wins
+{data_section}
 
-5. TOP DEALS TO ACTION
-   
-   🎯 DEALS TO WIN"""
+================================================================================
+Now generate the SCQA-structured MRR forecast report using the data above.
+================================================================================
+"""
         
-        for i, deal in enumerate(deals_to_win[:3], 1):
-            report += f"\n   #{i} {deal.get('company_name', 'Unknown')[:25]:<25} ${deal.get('mrr', 0):,.0f}/mo   {deal.get('region', 'N/A')}"
-        
-        report += "\n   \n   🛡️ DEALS TO SAVE"
-        
-        for i, deal in enumerate(deals_to_save[:3], 1):
-            report += f"\n   #{i} {deal.get('company_name', 'Unknown')[:25]:<25} ${deal.get('mrr', 0):,.0f}/mo   {deal.get('region', 'N/A')}"
-        
-        return [TextContent(type="text", text=report)]
+        return [TextContent(type="text", text=full_response)]
         
     except Exception as e:
-        return [TextContent(type="text", text=f"Error generating report: {str(e)}")]
-
-
-async def _forecast_trend(arguments: Any) -> List[TextContent]:
-    """Simple trend-based forecast."""
-    weeks = arguments.get("weeks", 4)
-    
-    try:
-        client = get_client()
-        sql = "SELECT * FROM `dev-im-platform.temp_fei_ai.v_model_3_levers` ORDER BY week"
-        df = client.query(sql).to_dataframe()
-        
-        last_mrr = float(df['total_mrr'].iloc[-1])
-        last_week = df['week'].iloc[-1]
-        avg_change = float(df['mrr_change'].tail(4).mean())
-        
-        predictions = []
-        forecast_mrr = last_mrr
-        
-        for i in range(weeks):
-            forecast_mrr = forecast_mrr + avg_change
-            week_date = last_week + pd.Timedelta(weeks=i+1)
-            change_pct = ((forecast_mrr - last_mrr) / last_mrr) * 100
-            predictions.append({
-                "week": week_date.strftime('%Y-%m-%d'),
-                "predicted_mrr": round(forecast_mrr, 0),
-                "change_pct": round(change_pct, 1)
-            })
-        
-        return [TextContent(
-            type="text",
-            text=json.dumps({
-                "success": True,
-                "model": "Trend",
-                "baseline_mrr": round(last_mrr, 0),
-                "weekly_trend": round(avg_change, 0),
-                "predictions": predictions
-            }, indent=2, default=str)
-        )]
-        
-    except Exception as e:
-        return [TextContent(type="text", text=json.dumps({"success": False, "error": str(e)}))]
+        return [TextContent(type="text", text=f"Error: {str(e)}")]

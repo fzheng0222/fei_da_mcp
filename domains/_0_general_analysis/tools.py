@@ -2,7 +2,6 @@
 General Analysis Domain - MCP Tools
 =====================================
 Generic data exploration tools for day-to-day analysis.
-These are the most frequently used tools.
 """
 
 import json
@@ -17,7 +16,7 @@ def get_tools():
     return [
         Tool(
             name="list_tables",
-            description="List all tables in a BigQuery dataset. Use this first to discover available tables.",
+            description="List all tables in a BigQuery dataset.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -31,7 +30,7 @@ def get_tools():
         ),
         Tool(
             name="describe_table",
-            description="Get schema (column names and types) for a BigQuery table. Use this before querying to understand the data.",
+            description="Get schema (column names and types) for a BigQuery table.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -64,11 +63,7 @@ def get_tools():
         ),
         Tool(
             name="query_bigquery",
-            description=(
-                "Run a SQL query on BigQuery and return results. "
-                "Use this for complex queries with filters, joins, aggregations. "
-                "Example: SELECT * FROM `prod-im-data.mod_imx.hubspot_b2b_deal` LIMIT 10"
-            ),
+            description="Run a SQL query on BigQuery and return results.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -83,23 +78,6 @@ def get_tools():
                     }
                 },
                 "required": ["sql"]
-            }
-        ),
-        Tool(
-            name="profile_table",
-            description=(
-                "Get a data quality profile of a table: row count, column stats, "
-                "null percentages, unique counts, and sample values."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "table": {
-                        "type": "string",
-                        "description": "Full table ID to profile"
-                    }
-                },
-                "required": ["table"]
             }
         )
     ]
@@ -117,10 +95,8 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent]:
         return await _sample_table(client, arguments)
     elif name == "query_bigquery":
         return await _query_bigquery(client, arguments)
-    elif name == "profile_table":
-        return await _profile_table(client, arguments)
     else:
-        raise ValueError(f"Unknown analysis tool: {name}")
+        raise ValueError(f"Unknown tool: {name}")
 
 
 async def _list_tables(client, arguments: Any) -> List[TextContent]:
@@ -218,63 +194,6 @@ async def _query_bigquery(client, arguments: Any) -> List[TextContent]:
         }
         
         return [TextContent(type="text", text=json.dumps(result, indent=2, default=str))]
-        
-    except Exception as e:
-        return [TextContent(type="text", text=json.dumps({"success": False, "error": str(e)}))]
-
-
-async def _profile_table(client, arguments: Any) -> List[TextContent]:
-    """Get data quality profile of a table."""
-    table = arguments.get("table")
-    if not table:
-        return [TextContent(type="text", text=json.dumps({"success": False, "error": "table is required"}))]
-    
-    try:
-        # Get table info
-        table_ref = client.get_table(table)
-        row_count = table_ref.num_rows
-        
-        # Get column stats
-        columns = []
-        for field in table_ref.schema[:20]:  # Limit to first 20 columns
-            col_name = field.name
-            col_type = field.field_type
-            
-            # Get null count and distinct count
-            stats_sql = f"""
-                SELECT 
-                    COUNTIF(`{col_name}` IS NULL) as null_count,
-                    COUNT(DISTINCT `{col_name}`) as distinct_count
-                FROM `{table}`
-            """
-            try:
-                stats_df = client.query(stats_sql).to_dataframe()
-                null_count = int(stats_df['null_count'].iloc[0])
-                distinct_count = int(stats_df['distinct_count'].iloc[0])
-                null_pct = round(null_count / row_count * 100, 1) if row_count > 0 else 0
-            except:
-                null_count = None
-                distinct_count = None
-                null_pct = None
-            
-            columns.append({
-                "name": col_name,
-                "type": col_type,
-                "null_pct": null_pct,
-                "distinct_count": distinct_count
-            })
-        
-        return [TextContent(
-            type="text",
-            text=json.dumps({
-                "success": True,
-                "table": table,
-                "row_count": row_count,
-                "column_count": len(table_ref.schema),
-                "columns_profiled": len(columns),
-                "profile": columns
-            }, indent=2, default=str)
-        )]
         
     except Exception as e:
         return [TextContent(type="text", text=json.dumps({"success": False, "error": str(e)}))]
