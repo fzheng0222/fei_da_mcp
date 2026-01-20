@@ -4,7 +4,7 @@ Data Analysis MCP Server - AI-powered deep dive data analysis via BigQuery.
 
 ## What is this?
 
-An MCP server that lets you analyze data using natural language. Say "forecast mmr" and get a full report.
+An MCP server that lets you analyze data using natural language. Say "forecast mrr" and get a full report.
 
 ## Quick Start
 
@@ -14,7 +14,7 @@ python main.py
 
 Then in Cursor, just ask:
 - `"bq analysis"` → General BigQuery exploration
-- `"forecast mmr"` → Weekly MRR report
+- `"forecast mrr"` → Weekly MRR report
 
 ---
 
@@ -31,11 +31,11 @@ MCP servers have 3 components: **Tools** (actions), **Resources** (read-only dat
 | `sample_table` | Quick row preview |
 | `query_bigquery` | Run SQL query |
 
-**1. Forecast MMR** - Weekly MRR predictions
+**1. Forecast MRR** - Weekly MRR predictions
 
 | Tool | What it does |
 |------|--------------|
-| `forecast_mmr` | Generate weekly report |
+| `forecast_mrr` | Generate weekly report |
 
 ---
 
@@ -44,7 +44,7 @@ MCP servers have 3 components: **Tools** (actions), **Resources** (read-only dat
 | # | Domain | Status |
 |---|--------|--------|
 | 0 | general_analysis | Ready |
-| 1 | forecast_mmr | Ready |
+| 1 | forecast_mrr | Ready |
 
 ---
 
@@ -56,7 +56,7 @@ da-mcp/
 ├── core/             # BigQuery client
 └── domains/
     ├── _0_general_analysis/
-    └── _1_forecast_mmr/
+    └── _1_forecast_mrr/
 ```
 
 ---
@@ -67,7 +67,7 @@ da-mcp/
 2. Add files: `tools.py`, `resources.py`, `prompts.py`, `README.md`
 3. Register in `main.py`
 
-See `_1_forecast_mmr` for a complete example.
+See `_1_forecast_mrr` for a complete example.
 
 ---
 

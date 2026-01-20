@@ -1,5 +1,5 @@
 """
-Forecast MMR Domain - MCP Tools
+Forecast MRR Domain - MCP Tools
 """
 
 import json
@@ -14,7 +14,7 @@ def get_tools():
     """Return list of forecast tools."""
     return [
         Tool(
-            name="forecast_mmr",
+            name="forecast_mrr",
             description="Generate the weekly MRR forecast report.",
             inputSchema={
                 "type": "object",
@@ -27,13 +27,13 @@ def get_tools():
 
 async def call_tool(name: str, arguments: Any) -> List[TextContent]:
     """Handle forecast tool calls."""
-    if name == "forecast_mmr":
-        return await _forecast_mmr_report(arguments)
+    if name == "forecast_mrr":
+        return await _forecast_mrr_report(arguments)
     else:
         raise ValueError(f"Unknown tool: {name}")
 
 
-async def _forecast_mmr_report(arguments: Any) -> List[TextContent]:
+async def _forecast_mrr_report(arguments: Any) -> List[TextContent]:
     """Generate the weekly MRR forecast report with SCQA-structured prompt."""
     try:
         client = get_client()
@@ -127,7 +127,7 @@ DEALS TO SAVE ({len(deals_to_save)} deals):
             data_section += f"- {deal.get('company_name', 'Unknown')}: ${deal.get('mrr', 0):,.0f} | velocity: {deal.get('deal_velocity_days', 'N/A')} days | region: {deal.get('b2b_region', 'N/A')}\n"
         
         # 7. Get the SCQA prompt and combine
-        prompt_content = get_prompt_content("forecast_mmr")
+        prompt_content = get_prompt_content("forecast_mrr")
         
         full_response = f"""
 {prompt_content}

@@ -1,5 +1,5 @@
 """
-Forecast MMR Domain - MCP Prompts
+Forecast MRR Domain - MCP Prompts
 ==================================
 SCQA-structured prompt for MRR forecast analysis.
 Target: $2M end-of-cycle MRR
@@ -11,8 +11,8 @@ from mcp.types import Prompt
 TARGET_MRR = 2_000_000
 
 PROMPTS = {
-    "forecast_mmr": {
-        "name": "forecast_mmr",
+    "forecast_mrr": {
+        "name": "forecast_mrr",
         "description": "Weekly MRR forecast report - SCQA structured analysis toward $2M target",
         "prompt": f"""You are an MRR Forecast Analyst. Generate a weekly forecast report.
 

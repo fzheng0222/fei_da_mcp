@@ -6,7 +6,7 @@ Modular MCP server with domain-based organization.
 
 Domains:
   0_general_analysis - Daily data exploration (most used)
-  1_forecast_mmr     - Weekly MRR forecasting
+  1_forecast_mrr     - Weekly MRR forecasting
 
 DATA SOURCE: BigQuery
 """
@@ -27,9 +27,9 @@ from domains._0_general_analysis import resources as analysis_resources
 from domains._0_general_analysis import tools as analysis_tools
 from domains._0_general_analysis import prompts as analysis_prompts
 
-from domains._1_forecast_mmr import resources as forecast_resources
-from domains._1_forecast_mmr import tools as forecast_tools
-from domains._1_forecast_mmr import prompts as forecast_prompts
+from domains._1_forecast_mrr import resources as forecast_resources
+from domains._1_forecast_mrr import tools as forecast_tools
+from domains._1_forecast_mrr import prompts as forecast_prompts
 
 
 # ============================================================================
@@ -71,8 +71,8 @@ TOOL_DOMAINS = {
     # 0_general_analysis
     "list_tables": "analysis", "describe_table": "analysis",
     "sample_table": "analysis", "query_bigquery": "analysis",
-    # 1_forecast_mmr
-    "forecast_mmr": "forecast",
+    # 1_forecast_mrr
+    "forecast_mrr": "forecast",
 }
 
 
@@ -143,6 +143,6 @@ if __name__ == "__main__":
     print("=" * 60)
     print("Domains:")
     print("  0_general_analysis - list_tables, describe_table, sample_table, query_bigquery")
-    print("  1_forecast_mmr     - forecast_mmr")
+    print("  1_forecast_mrr     - forecast_mrr")
     print("=" * 60)
     asyncio.run(main())

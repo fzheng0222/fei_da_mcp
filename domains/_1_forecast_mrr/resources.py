@@ -1,5 +1,5 @@
 """
-Forecast MMR Domain - MCP Resources
+Forecast MRR Domain - MCP Resources
 ====================================
 Read-only data AI can access about forecasts.
 """
