@@ -223,7 +223,7 @@ v_cleaned_deals → v_model_3_levers → Model → t_forecast_*
 
 ```bash
 # Full pipeline (XGBoost + Forecast + Save)
-python -m domains._1_forecast_mrr.run
+python run.py
 
 # Via MCP (report only)
 "forecast mrr"
