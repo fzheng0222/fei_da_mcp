@@ -1,10 +1,6 @@
-# DA-MCP
+# DS-MRR
 
-Data Analysis MCP Server - AI-powered deep dive data analysis via BigQuery.
-
-## What is this?
-
-An MCP server that lets you analyze data using natural language. Say "forecast mrr" and get a full report.
+Data Science MRR Forecast Server - MRR forecasting and BigQuery exploration.
 
 ## Quick Start
 
@@ -13,71 +9,40 @@ python main.py
 ```
 
 Then in Cursor, just ask:
-- `"bq analysis"` → General BigQuery exploration
 - `"forecast mrr"` → Weekly MRR report
+- `"list tables in prod-im-data.mod_imx"` → BigQuery exploration
 
----
-
-## MCP Components
-
-MCP servers have 3 components: **Tools** (actions), **Resources** (read-only data), **Prompts** (templates).
-
-**0. General Analysis** - Daily data exploration
+## Tools
 
 | Tool | What it does |
 |------|--------------|
+| `forecast_mrr` | Generate weekly MRR forecast report |
 | `list_tables` | List tables in a dataset |
 | `describe_table` | Get table schema |
 | `sample_table` | Quick row preview |
 | `query_bigquery` | Run SQL query |
 
-**1. Forecast MRR** - Weekly MRR predictions
-
-| Tool | What it does |
-|------|--------------|
-| `forecast_mrr` | Generate weekly report |
-
----
-
-## Domains
-
-| # | Domain | Status |
-|---|--------|--------|
-| 0 | general_analysis | Ready |
-| 1 | forecast_mrr | Ready |
-
----
-
 ## Structure
 
 ```
-da-mcp/
-├── main.py           # MCP server
-├── core/             # BigQuery client
-└── domains/
-    ├── _0_general_analysis/
-    └── _1_forecast_mrr/
+ds-mrr/
+├── main.py        # MCP server entry point
+├── tools.py       # Tool definitions and handlers
+├── prompts.py     # SCQA prompt for MRR forecast
+├── resources.py   # Read-only data resources
+├── bq_client.py   # BigQuery client
+├── run.py         # Standalone XGBoost forecast script
+└── requirements.txt
 ```
 
----
+## Standalone Forecast
 
-## How to Add a Domain
+Run the XGBoost model directly and save results to BigQuery:
 
-1. Create folder: `domains/_X_name/`
-2. Add files: `tools.py`, `resources.py`, `prompts.py`, `README.md`
-3. Register in `main.py`
+```bash
+python run.py
+```
 
-See `_1_forecast_mrr` for a complete example.
-
----
-
-## Future Considerations
-
-| Area | What | Why |
-|------|------|-----|
-| **Guardrails** | Query cost limits, row limits, table allowlists | Prevent expensive/dangerous queries |
-| **Memory** | Conversation history, past queries, user preferences | Context-aware responses, learn from usage |
-| **Orchestration** | Multi-step workflows, chained tools, auto-retry | Complex analysis pipelines (e.g., "weekly report → slack → email") |
-| **Caching** | Query result caching, schema caching | Faster responses, lower BQ costs |
-| **Auth** | User-level permissions, dataset access control | Multi-user support |
-| **Observability** | Query logs, usage metrics, error tracking | Debug and optimize |
+This trains the model and writes to:
+- `dev-im-platform.temp_fei_ai.t_forecast_feature_importance`
+- `dev-im-platform.temp_fei_ai.t_forecast_predictions`

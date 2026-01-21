@@ -1,5 +1,5 @@
 """
-Shared BigQuery client for all domains.
+Shared BigQuery client.
 """
 
 from google.cloud import bigquery

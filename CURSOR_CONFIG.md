@@ -9,9 +9,9 @@ Press `Cmd + ,` → Search "mcp" → Edit settings.json:
 ```json
 {
   "mcpServers": {
-    "da-mcp": {
-      "command": "/Users/fei.zheng/Documents/Github/da-mcp/.venv/bin/python",
-      "args": ["/Users/fei.zheng/Documents/Github/da-mcp/main.py"]
+    "ds-mrr": {
+      "command": "/Users/fei.zheng/Documents/Github/ds-mrr/.venv/bin/python",
+      "args": ["/Users/fei.zheng/Documents/Github/ds-mrr/main.py"]
     }
   }
 }
@@ -39,6 +39,7 @@ Ask: "List tables in prod-im-data.mod_imx"
 
 | Tool | Purpose |
 |------|---------|
+| `forecast_mrr` | Generate weekly MRR forecast report |
 | `list_tables` | List tables in a BQ dataset |
 | `describe_table` | Get table schema |
 | `sample_table` | Preview rows |

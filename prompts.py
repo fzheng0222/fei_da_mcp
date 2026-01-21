@@ -1,6 +1,6 @@
 """
-Forecast MRR Domain - MCP Prompts
-==================================
+DS-MRR Prompts
+===============
 SCQA-structured prompt for MRR forecast analysis.
 Target: $2M end-of-cycle MRR
 """

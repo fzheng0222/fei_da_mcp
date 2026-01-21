@@ -2,6 +2,8 @@
 """
 MRR Forecast Script (3-Lever Model)
 ====================================
+Standalone script to run XGBoost model and save results to BigQuery.
+
 1. XGBoost: Learn which levers predict MRR changes
 2. Simple Forecast: Predict next 1-4 weeks (trend-based)
 
