@@ -10,7 +10,6 @@ python main.py
 
 Then in Cursor, just ask:
 - `"forecast mrr"` → Weekly MRR report
-- `"list tables in prod-im-data.mod_imx"` → BigQuery exploration
 
 ## Tools
 
